@@ -84,6 +84,31 @@
     letter-spacing: 1px;
   }
 
+  /* MINCE site link button */
+  .mince-site-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(79,158,255,0.1);
+    border: 1px solid rgba(79,158,255,0.3);
+    color: var(--accent);
+    padding: 7px 14px;
+    border-radius: var(--radius);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-decoration: none;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .mince-site-btn:hover {
+    background: rgba(79,158,255,0.18);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .mince-site-btn .btn-arrow { font-size: 13px; }
+
   /* TABS */
   .tabs {
     background: var(--bg2);
@@ -510,6 +535,17 @@
   }
   .plot-use-filter input { accent-color: var(--accent); }
 
+  /* Excluded-points note */
+  .plot-excl-note {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    align-self: flex-end;
+    padding-bottom: 10px;
+    white-space: nowrap;
+  }
+  .plot-excl-note span { color: var(--warning); }
+
   #plotly-container {
     flex: 1;
     min-height: 0;
@@ -567,6 +603,10 @@
     <div class="logo">MINCE</div>
     <div class="subtitle">Data Visualization Tool</div>
   </div>
+  <!-- MINCE website link -->
+  <a class="mince-site-btn" href="https://starcat8.github.io/mince-siter/index.html" target="_blank" rel="noopener">
+    ★ MINCE Website <span class="btn-arrow">↗</span>
+  </a>
   <div class="stats">
     <div class="stat">
       <div class="stat-val" id="total-count">—</div>
@@ -665,6 +705,9 @@
           <input type="checkbox" id="plot-use-filter" checked>
           Use filtered subset
         </label>
+        <div class="plot-excl-note" id="excl-note" style="display:none;">
+          <span id="excl-count">0</span> pts excluded (≤ −99)
+        </div>
         <button class="plot-btn" onclick="renderPlot()">▶ Plot</button>
       </div>
       <div id="plotly-container">
@@ -702,6 +745,9 @@ let allCols = [];
 let numericCols = [];
 let stringCols = [];
 let sortCol = null, sortAsc = true;
+
+// Sentinel value: points with x OR y <= this threshold are excluded from plots
+const SENTINEL = -99;
 
 const KEY_COLS = ['main_id_2', 'Teff', 'logg', 'micro', 'Fe', 'Festd', 'OBS', 'facility', 'who',
   'O','Na','Mg','Al','Si','Ca','ScII','TiI','TiII','V','Cr','Mn','Co','Ni','Cu','Zn',
@@ -784,7 +830,6 @@ function addFilter() {
   const logic = document.getElementById('fb-logic').value;
   if (!val) { alert('Enter a value'); return; }
 
-  // Parse value
   const numVal = parseFloat(val);
   const isNum = !isNaN(numVal) && val !== '';
 
@@ -843,9 +888,6 @@ function applyFilters() {
     return;
   }
 
-  // Start with first filter (always applied as base)
-  let result = new Set(allData.filter(r => testRow(r, filters[0])).map((_, i) => allData.indexOf(r => false) ));
-  // Use index-based sets
   const idxAll = allData.map((_, i) => i);
   let resultSet = new Set(idxAll.filter(i => testRow(allData[i], filters[0])));
 
@@ -857,11 +899,10 @@ function applyFilters() {
     } else if (f.logic === 'OR') {
       matchSet.forEach(i => resultSet.add(i));
     } else if (f.logic === 'XOR') {
-      const xor = new Set([
+      resultSet = new Set([
         ...[...resultSet].filter(i => !matchSet.has(i)),
         ...[...matchSet].filter(i => !resultSet.has(i))
       ]);
-      resultSet = xor;
     } else if (f.logic === 'NOT') {
       matchSet.forEach(i => resultSet.delete(i));
     }
@@ -901,7 +942,6 @@ function renderTable() {
     );
   }
 
-  // Sort
   if (sortCol) {
     data = [...data].sort((a, b) => {
       const av = a[sortCol], bv = b[sortCol];
@@ -978,8 +1018,12 @@ function selectKeyCols() {
 }
 
 // ============================================================
-// PLOT
+// PLOT  —  sentinel filtering: exclude rows where x OR y <= -99
 // ============================================================
+function isSentinel(v) {
+  return v === null || v === undefined || (typeof v === 'number' && v <= SENTINEL);
+}
+
 function renderPlot() {
   const xCol = document.getElementById('plot-x').value;
   const yCol = document.getElementById('plot-y').value;
@@ -987,16 +1031,35 @@ function renderPlot() {
   const cscale = document.getElementById('plot-cscale').value;
   const useFilter = document.getElementById('plot-use-filter').checked;
 
-  const data = useFilter ? filteredData : allData;
+  const pool = useFilter ? filteredData : allData;
 
-  const xs = data.map(r => r[xCol]);
-  const ys = data.map(r => r[yCol]);
-  const labels = data.map(r => r['main_id_2'] || r['target_id'] || '');
+  // Build valid mask: exclude nulls AND sentinel values (≤ -99) on x, y, and color axes
+  const validMask = pool.map(r => {
+    const xv = r[xCol], yv = r[yCol];
+    if (isSentinel(xv) || isSentinel(yv)) return false;
+    if (colorCol && isSentinel(r[colorCol])) return false;
+    return true;
+  });
 
-  const validMask = xs.map((x, i) => x !== null && x !== undefined && ys[i] !== null && ys[i] !== undefined);
-  const xf = xs.filter((_, i) => validMask[i]);
-  const yf = ys.filter((_, i) => validMask[i]);
-  const lf = labels.filter((_, i) => validMask[i]);
+  const excluded = validMask.filter(v => !v).length;
+  const exclNote = document.getElementById('excl-note');
+  const exclCount = document.getElementById('excl-count');
+  if (excluded > 0) {
+    exclCount.textContent = excluded;
+    exclNote.style.display = 'block';
+  } else {
+    exclNote.style.display = 'none';
+  }
+
+  const xf     = pool.filter((_, i) => validMask[i]).map(r => r[xCol]);
+  const yf     = pool.filter((_, i) => validMask[i]).map(r => r[yCol]);
+  const labels = pool.filter((_, i) => validMask[i]).map(r => r['main_id_2'] || r['target_id'] || '');
+
+  if (xf.length === 0) {
+    document.getElementById('plotly-container').innerHTML =
+      '<div class="empty-state"><div class="icon">∅</div><div>No valid points after sentinel filtering</div></div>';
+    return;
+  }
 
   let marker = {
     size: 7,
@@ -1005,9 +1068,9 @@ function renderPlot() {
   };
 
   if (colorCol) {
-    const cs = data.map(r => r[colorCol]).filter((_, i) => validMask[i]);
-    const cmin = Math.min(...cs.filter(v => v !== null && v !== undefined));
-    const cmax = Math.max(...cs.filter(v => v !== null && v !== undefined));
+    const cs = pool.filter((_, i) => validMask[i]).map(r => r[colorCol]);
+    const cmin = Math.min(...cs);
+    const cmax = Math.max(...cs);
     marker = {
       ...marker,
       color: cs,
@@ -1030,7 +1093,7 @@ function renderPlot() {
     x: xf, y: yf,
     mode: 'markers',
     type: 'scatter',
-    text: lf,
+    text: labels,
     hovertemplate: `<b>%{text}</b><br>${xCol}: %{x}<br>${yCol}: %{y}<extra></extra>`,
     marker
   };
