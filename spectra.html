@@ -129,6 +129,7 @@
 const CATALOG_CSV = 'MINCE32.csv';
 const SPECTRA_BASE = 'spectra/';
 const SENTINEL = -99;                 // values ≤ −99 are "not measured"
+const SENTINEL_HI = 8;                // abundances / std above 8 are "not measured"
 
 // columns shown in the table: [csv column, label, decimals]
 const TABLE_COLS = [
@@ -153,6 +154,7 @@ Promise.all([
   MinceSpectra.loadManifest(SPECTRA_BASE).catch(e => { console.warn(e); return { stars: {}, files: {}, base: SPECTRA_BASE }; }),
 ]).then(([csv, man]) => {
   manifest = man;
+  cleanPlaceholders(csv.data, csv.meta.fields);
   const seen = new Set();
   csv.data.forEach(r => {
     const key = normKey(r.main_id_2) || normKey(r.target_id);
@@ -181,6 +183,29 @@ Promise.all([
   render();
   openFromHash();
 }).catch(e => { $('table-wrap').innerHTML = `<div class="loading">Error loading data: ${esc(e.message || e)}</div>`; });
+
+// ── placeholders ("not measured") → null, same rule as the visualizer ─────────
+//   ≤ −99 everywhere; > 8 in abundance ([..]) and *std columns;
+//   [X/H] and [X/Fe] of the same element: if one is a placeholder, both are dropped
+function cleanPlaceholders(data, fields) {
+  const hi = c => c.startsWith('[') || /std$/.test(c);
+  const comp = {};
+  fields.forEach(c => {
+    const m = c.match(/^\[([A-Z][a-z]?)(I|II)?\/H\]$/);
+    if (!m || m[1] === 'Fe') return;
+    const re = new RegExp('^\\[' + m[1] + '(I|II)?/Fe(I|II)?\\]$');
+    const cands = fields.filter(f => re.test(f));
+    const fe = cands.find(f => f.startsWith('[' + m[1] + (m[2] || '') + '/')) || cands[0];
+    if (fe) { comp[c] = fe; comp[fe] = c; }                          // both directions
+  });
+  const bad = (v, c) => typeof v === 'number' && (v <= SENTINEL || (hi(c) && v > SENTINEL_HI));
+  data.forEach(r => {
+    const orig = { ...r };
+    fields.forEach(c => {
+      if (bad(r[c], c) || (comp[c] && bad(orig[comp[c]], comp[c]))) r[c] = null;
+    });
+  });
+}
 
 // ── filters ───────────────────────────────────────────────────────────────────
 function addCond(col = '') {

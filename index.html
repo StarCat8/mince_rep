@@ -732,7 +732,7 @@
           Use filtered subset
         </label>
         <div class="plot-excl-note" id="excl-note" style="display:none;">
-          <span id="excl-count">0</span> pts excluded (≤ −99 / ≥ 9.99)
+          <span id="excl-count">0</span> pts excluded (≤ −99 / > 8)
         </div>
         <button class="plot-btn" onclick="renderPlot()">▶ Plot</button>
       </div>
@@ -786,7 +786,7 @@ let stringCols = [];
 let sortCol = null, sortAsc = true;
 
 // Sentinel value: points with x OR y <= this threshold are excluded from plots
-const SENTINEL = -9;
+const SENTINEL = -99;
 
 const KEY_COLS = ['main_id_2', 'Teff', 'logg', 'micro', 'Fe', 'Festd', 'OBS', 'facility', 'who',
   'O','Na','Mg','Al','Si','Ca','ScII','TiI','TiII','V','Cr','Mn','Co','Ni','Cu','Zn',
@@ -1062,9 +1062,9 @@ function selectKeyCols() {
 // ============================================================
 // Placeholders ("not measured"):
 //   • any numeric column:                       value ≤ −99
-//   • abundance columns ([..]) and *std columns: value ≥ 9.99  (Teff, ra, parallax… are NOT affected)
+//   • abundance columns ([..]) and *std columns: value > 8  (Teff, ra, parallax… are NOT affected)
 //   • [X/H] and [X/Fe] of the same element/star: if one is a placeholder, both are ignored
-const SENTINEL_HI = 9.99;
+const SENTINEL_HI = 8;                  // abundances above this are placeholders
 const usesHiSentinel = col => !!col && (col.startsWith('[') || /std$/.test(col));
 let _feCompanion = null;                       // '[EuII/H]' <-> '[EuII/FeII]'
 function feCompanion(col) {
@@ -1083,7 +1083,7 @@ function feCompanion(col) {
 function isPlaceholder(v, col) {
   if (v === null || v === undefined || v === '') return true;
   if (typeof v !== 'number') return false;
-  return v <= SENTINEL || (usesHiSentinel(col) && v >= SENTINEL_HI - 1e-6);
+  return v <= SENTINEL || (usesHiSentinel(col) && v > SENTINEL_HI);
 }
 function isSentinel(v, col, row) {
   if (isPlaceholder(v, col)) return true;
@@ -1100,7 +1100,7 @@ function renderPlot() {
 
   const pool = useFilter ? filteredData : allData;
 
-  // Build valid mask: exclude nulls AND placeholder values (≤ −99, ≥ 9.99 for abundances) on x, y, color
+  // Build valid mask: exclude nulls AND placeholder values (≤ −99, > 8 for abundances) on x, y, color
   const validMask = pool.map(r => {
     const xv = r[xCol], yv = r[yCol];
     if (isSentinel(xv, xCol, r) || isSentinel(yv, yCol, r)) return false;
