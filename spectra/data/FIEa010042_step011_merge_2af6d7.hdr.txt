@@ -1,0 +1,253 @@
+===== HDU 0: PrimaryHDU =====
+SIMPLE  =                    T / Fits standard                                  
+BITPIX  =                  -32 / Bits per pixel                                 
+NAXIS   =                    1 / Number of axes                                 
+NAXIS1  =               203600 / Axis length                                    
+EXTEND  =                    T / File may contain extensions                    
+ORIGIN  = 'NOAO-IRAF FITS Image Kernel July 2003' / FITS file originator        
+DATE    = '2021-01-02T03:53:34' / Date FITS file was generated                  
+IRAF-TLM= '2021-01-02T03:53:34' / Time of last modification                     
+OBJECT  = 'TYC_2973-1090-1'    / Name of the object observed                    
+DATE-OBS= '2021-01-02T02:56:44.357'                                             
+DATE_OBS= '2021-01-02T02:56:44.357'                                             
+OBSERVAT= 'LaPalma '                                                            
+TELESCOP= 'NOT     '                                                            
+INSTRUME= 'FIES    '                                                            
+DETNAME = 'E2V CCD 231-42 2kx2k'                                                
+CHIPID  = '12234-07-04'                                                         
+CREATOR = 'CCD3COMM'                                                            
+XOVERSC = '50      '                                                            
+YOVERSC = '38      '                                                            
+DATE-AVG= '2021-01-02T03:24:14.332'                                             
+FIFOCUS =                    0                                                  
+FILSL   = 'ThAr    '                                                            
+FILSLPOS=                  680                                                  
+CALSHUT =                    0                                                  
+CALSHUTN=                  -99                                                  
+CALSHUTD=                  -99                                                  
+FIFMSKNM= 'F4 HiRes'                                                            
+FIFMSKID=                    4                                                  
+FIFMSKPS=               233297                                                  
+FIBUNDLE= 'D3 - installed May 6 2019'                                           
+FICARMNM= 'Parked4 '                                                            
+FICARMID=                   20                                                  
+FICARMPX=                14100                                                  
+FICARMPY=                14000                                                  
+FILMP1  =                    0                                                  
+FILMPNM1= 'Halogen '                                                            
+FILMPID1= 'LMP1234 '                                                            
+FILMP2  =                    0                                                  
+FILMPNM2= 'Neon    '                                                            
+FILMPID2= 'LMP1234 '                                                            
+FILMP3  =                    0                                                  
+FILMPNM3= 'Hg      '                                                            
+FILMPID3= 'LMP1234 '                                                            
+FILMP4  =                    0                                                  
+FILMPNM4= 'ThAr    '                                                            
+FILMPID4= 'ThAr Hereus installed 17 Dec 2013'                                   
+FILMP6  =                    0                                                  
+FILMPNM6= 'Halogen '                                                            
+FILMPID6= 'Ha12345 '                                                            
+FILMP7  =                    0                                                  
+FILMPNM7= 'Th/Ar   '                                                            
+FILMPID7= 'ThAr Photron installed 03 Nov 2020'                                  
+FILMP8  =                    0                                                  
+FILMPNM8= 'LDLS/etalon'                                                         
+FILMPID8= 'LDLS (Sept 2019) / etalon (June 2019)'                               
+FIETSHUT=                  -99                                                  
+UT      =          2.945555555                                                  
+ST      =    8.552222221999999                                                  
+RA      =     120.015128744705                                                  
+DEC     =     39.8658425741128                                                  
+EQUINOX =               2000.0                                                  
+RADECSYS= 'FK5     '                                                            
+TELALT  =        77.3090667725                                                  
+AZIMUTH =        151.498550415                                                  
+AIRMASS =     1.02504248351039                                                  
+FIELD   =            -120.2631                                                  
+ROTPOS  =               92.748                                                  
+TELFOCUS=                22769                                                  
+TRACKMOD= 'normal  '                                                            
+DTRCK_RA=                  0.0                                                  
+DTRCK_DE=                  0.0                                                  
+CCDPROBE= 'split   '                                                            
+ADCARM  = 'OUT     '                                                            
+ADCMODE = '0       '                                                            
+ADC1ANG =             -0.00051                                                  
+ADC2ANG =             -0.00022                                                  
+ADC1ENC =                  -99                                                  
+ADC2ENC =                  -99                                                  
+STFLTNM = 'g_SDSS480_145'                                                       
+STFLTID =                   83                                                  
+STFLTPOS=                    6                                                  
+AUSTATUS=                    0                                                  
+AUXPOS  =               179892                                                  
+AUYPOS  =                78905                                                  
+AUBXXPOS=                  278                                                  
+AUBXYPOS=                  264                                                  
+AUBXSIZE=                   11                                                  
+AUSBXPOS=                  100                                                  
+AUSBYPOS=                  400                                                  
+AUFOCUS =                  571                                                  
+AUFLTID =                    2                                                  
+AUFLTNM = 'open    '                                                            
+BOXMORA =                  0.0                                                  
+BOXMODEC=                  0.0                                                  
+TCSTGT  = 'TYC_2973-1090-1'                                                     
+OBJRA   =         8.0002305556                                                  
+OBJDEC  =        39.8654722212                                                  
+OBJPMRA =                 0.01                                                  
+OBJPMDEC=                -0.02                                                  
+OBJEQUIN=               2000.0                                                  
+OBSGEO-X=         5327395.9638                                                  
+OBSGEO-Y=        -1719170.4876                                                  
+OBSGEO-Z=          3051490.766                                                  
+QCRDATE = 'UNDEFINED'                                                           
+OBSERVER= 'Emil Knudstrup'                                                      
+IMAGETYP= 'OBJECT  '                                                            
+OBS_MODE= 'SPECTROSCOPY'                                                        
+IMAGECAT= 'SCIENCE '                                                            
+PROPID  = '62-012  '                                                            
+PROPTITL= 'Measuring at Intermediate metallicity Neutron Capture Elements'      
+PINAME  = 'G. Cescutti'                                                         
+GROUPID = 'newyear06_v2'                                                        
+BLOCKID = '06      '                                                            
+SEQID   = 'standard_medium'                                                     
+FILENAME= 'FIEa010042.fits'                                                     
+EXPTIME =               3300.0                                                  
+SDLY    =                  500                                                  
+SCOR    =                    0                                                  
+ROTATE  = '0       '                                                            
+MIRROR_X=                    T                                                  
+MIRROR_Y=                    T                                                  
+AMPLMODE= 'B       '                                                            
+DETMODE0=                    2                                                  
+DETWIN1 = '[1:2198, 1:2102]'                                                    
+CCDTEMP =              -120.01                                                  
+LN2TEMP =              -175.93                                                  
+P_DEWAR =             8.87E-07                                                  
+SHSTAT  = 'OPEN    '                                                            
+DETXBIN =                    1                                                  
+DETYBIN =                    1                                                  
+NWINDOWS=                    1                                                  
+TSAM    =                  340                                                  
+FPIX    =                  108                                                  
+VSHI    =                  6.5                                                  
+VSLO    =                 -4.5                                                  
+VPHI    =                  6.0                                                  
+VPLO    =                 -5.0                                                  
+BUNIT   = 'count   '                                                            
+CCDNAME = 'CCD15   '                                                            
+CTYPE1  = 'LINEAR  '                                                            
+CUNIT1  = 'pixel   '                                                            
+CUNIT2  = 'pixel   '                                                            
+DARK    =                  0.0                                                  
+QCDDATE = 'UNDEFINED'                                                           
+RDNOISE =                  3.3                                                  
+GAIN    =                0.142                                                  
+IMAGEID =                    1                                                  
+ZERO0-1 =               -20150                                                  
+GAIN0-1 =                  1.0                                                  
+VBHA0-1 =                 28.3                                                  
+VBHB0-1 =                 16.3                                                  
+VBHC0-1 =                 28.3                                                  
+VBLA0-1 =                 -1.5                                                  
+VBLB0-1 =                  0.0                                                  
+DATASEC = '[51:2148,1:2102]'                                                    
+TRIMSEC = '[51:2148,1:2102]'                                                    
+CCDSEC  = '[51:2148,1:2102]'                                                    
+DETSEC  = '[1:2198,1:2102]'                                                     
+BIASSEC = '[1:50,1:2102]'                                                       
+BIASSEC0= '[0:0,0:0]'                                                           
+BIASSEC1= '[1:2198,2064:2102]'                                                  
+CCDSUM  = '1 1     '                                                            
+FIESTOOL= '1.5.1   '           / FIEStool version                               
+CTPYE2  = 'PIXEL   '                                                            
+VHELIO  =     6.00756190669146                                                  
+BIAS01  = 'FIEa010025.fits'    / Original name of bias in masterbias            
+BIAS02  = 'FIEa010026.fits'    / Original name of bias in masterbias            
+BIAS03  = 'FIEa010027.fits'    / Original name of bias in masterbias            
+BIAS04  = 'FIEa010028.fits'    / Original name of bias in masterbias            
+BIAS05  = 'FIEa010029.fits'    / Original name of bias in masterbias            
+BIAS06  = 'FIEa010030.fits'    / Original name of bias in masterbias            
+BIAS07  = 'FIEa010031.fits'    / Original name of bias in masterbias            
+NBIAS   =                    7 / Number of frames combined in masterbias        
+FLAT01  = 'FIEa010004.fits'    / Original name of flat in masterflat            
+FLAT02  = 'FIEa010005.fits'    / Original name of flat in masterflat            
+FLAT03  = 'FIEa010006.fits'    / Original name of flat in masterflat            
+FLAT04  = 'FIEa010007.fits'    / Original name of flat in masterflat            
+FLAT05  = 'FIEa010008.fits'    / Original name of flat in masterflat            
+FLAT06  = 'FIEa010009.fits'    / Original name of flat in masterflat            
+FLAT07  = 'FIEa010010.fits'    / Original name of flat in masterflat            
+FLAT08  = 'FIEa010011.fits'    / Original name of flat in masterflat            
+FLAT09  = 'FIEa010012.fits'    / Original name of flat in masterflat            
+FLAT10  = 'FIEa010013.fits'    / Original name of flat in masterflat            
+FLAT11  = 'FIEa010014.fits'    / Original name of flat in masterflat            
+FLAT12  = 'FIEa010015.fits'    / Original name of flat in masterflat            
+FLAT13  = 'FIEa010016.fits'    / Original name of flat in masterflat            
+FLAT14  = 'FIEa010017.fits'    / Original name of flat in masterflat            
+FLAT15  = 'FIEa010018.fits'    / Original name of flat in masterflat            
+FLAT16  = 'FIEa010019.fits'    / Original name of flat in masterflat            
+FLAT17  = 'FIEa010020.fits'    / Original name of flat in masterflat            
+FLAT18  = 'FIEa010021.fits'    / Original name of flat in masterflat            
+FLAT19  = 'FIEa010022.fits'    / Original name of flat in masterflat            
+FLAT20  = 'FIEa010023.fits'    / Original name of flat in masterflat            
+FLAT21  = 'FIEa010024.fits'    / Original name of flat in masterflat            
+NFLAT   =                   21 / Number of frames combined in masterflat        
+HISTORY This is FIEStool version 1.5.1                                          
+HISTORY Original file : FIEa010042.fits                                         
+HISTORY Frame rotated/flipped (orientation 7)                                   
+HISTORY Frame clipped                                                           
+HISTORY Added header card for heliocentric velocity                             
+HISTORY Cleaned of strongest cosmic rays: win. size 12 and threshold 10         
+HISTORY Replaced zero-valued pixels with combined bias values                   
+HISTORY Subtracted combined bias : master_bias.fits                             
+HISTORY Divided by normalized combined flat : master_normflat.fits              
+HISTORY Extracted orders according to definition in master_orderdef.fits        
+HISTORY Divided out blaze shape using blazeshape.fits                           
+HISTORY Added wavelength definition using waveref.fits                          
+HISTORY Individual orders merged from /srv/data/reduced/fies/auto/FIEa010042_ste
+HISTORY p011_merge.fits                                                         
+BANDID1 = 'spectrum - background none, weights variance, clean yes'             
+BANDID2 = 'raw - background none, weights none, clean no'                       
+BANDID3 = 'sigma - background none, weights variance, clean yes'                
+WCSDIM  =                    1                                                  
+CD1_1   =    0.025969895845357                                                  
+LTM1_1  =                   1.                                                  
+WAT0_001= 'system=equispec'                                                     
+WAT1_001= 'wtype=linear label=Wavelength units=Angstroms'                       
+DCLOG1  = 'REFSPEC1 = waveref'                                                  
+WAVE01  = 'FIEa010033.fits'    / Original name of ThAr for wavelength solution  
+CRPIX1  =                   1.                                                  
+APNUM1  = '1 154 42.90 54.90'                                                   
+DC-FLAG =                    0                                                  
+CRVAL1  =      3693.5375976563                                                  
+CDELT1  =    0.025969895845357                                                  
+NCOMBINE=                   91                                                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+END
