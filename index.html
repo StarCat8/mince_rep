@@ -732,7 +732,7 @@
           Use filtered subset
         </label>
         <div class="plot-excl-note" id="excl-note" style="display:none;">
-          <span id="excl-count">0</span> pts excluded (≤ −99)
+          <span id="excl-count">0</span> pts excluded (≤ −99 / ≥ 9.99)
         </div>
         <button class="plot-btn" onclick="renderPlot()">▶ Plot</button>
       </div>
@@ -786,7 +786,7 @@ let stringCols = [];
 let sortCol = null, sortAsc = true;
 
 // Sentinel value: points with x OR y <= this threshold are excluded from plots
-const SENTINEL = -99;
+const SENTINEL = -9;
 
 const KEY_COLS = ['main_id_2', 'Teff', 'logg', 'micro', 'Fe', 'Festd', 'OBS', 'facility', 'who',
   'O','Na','Mg','Al','Si','Ca','ScII','TiI','TiII','V','Cr','Mn','Co','Ni','Cu','Zn',
@@ -818,6 +818,7 @@ Papa.parse('MINCE32.csv', {
     applyFilters();
     renderTable();
     buildColModal();
+    openPlotFromURL();
   }
 });
 
@@ -1059,8 +1060,35 @@ function selectKeyCols() {
 // ============================================================
 // PLOT  —  sentinel filtering: exclude rows where x OR y <= -99
 // ============================================================
-function isSentinel(v) {
-  return v === null || v === undefined || (typeof v === 'number' && v <= SENTINEL);
+// Placeholders ("not measured"):
+//   • any numeric column:                       value ≤ −99
+//   • abundance columns ([..]) and *std columns: value ≥ 9.99  (Teff, ra, parallax… are NOT affected)
+//   • [X/H] and [X/Fe] of the same element/star: if one is a placeholder, both are ignored
+const SENTINEL_HI = 9.99;
+const usesHiSentinel = col => !!col && (col.startsWith('[') || /std$/.test(col));
+let _feCompanion = null;                       // '[EuII/H]' <-> '[EuII/FeII]'
+function feCompanion(col) {
+  if (!_feCompanion) {
+    _feCompanion = {};
+    allCols.forEach(c => {
+      const m = c.match(/^\[([A-Z][a-z]?)(I|II)?\/H\]$/);
+      if (!m || m[1] === 'Fe') return;
+      const cands = allCols.filter(f => new RegExp('^\\[' + m[1] + '(I|II)?/Fe(I|II)?\\]$').test(f));
+      const fe = cands.find(f => f.startsWith('[' + m[1] + (m[2] || '') + '/')) || cands[0];
+      if (fe) { _feCompanion[c] = fe; _feCompanion[fe] = c; }     // both directions
+    });
+  }
+  return _feCompanion[col];
+}
+function isPlaceholder(v, col) {
+  if (v === null || v === undefined || v === '') return true;
+  if (typeof v !== 'number') return false;
+  return v <= SENTINEL || (usesHiSentinel(col) && v >= SENTINEL_HI - 1e-6);
+}
+function isSentinel(v, col, row) {
+  if (isPlaceholder(v, col)) return true;
+  const fe = row && feCompanion(col);
+  return !!fe && isPlaceholder(row[fe], fe);
 }
 
 function renderPlot() {
@@ -1072,11 +1100,11 @@ function renderPlot() {
 
   const pool = useFilter ? filteredData : allData;
 
-  // Build valid mask: exclude nulls AND sentinel values (≤ -99) on x, y, and color axes
+  // Build valid mask: exclude nulls AND placeholder values (≤ −99, ≥ 9.99 for abundances) on x, y, color
   const validMask = pool.map(r => {
     const xv = r[xCol], yv = r[yCol];
-    if (isSentinel(xv) || isSentinel(yv)) return false;
-    if (colorCol && isSentinel(r[colorCol])) return false;
+    if (isSentinel(xv, xCol, r) || isSentinel(yv, yCol, r)) return false;
+    if (colorCol && isSentinel(r[colorCol], colorCol, r)) return false;
     return true;
   });
 
@@ -1242,6 +1270,35 @@ function closeSpecModal() {
   if (specViewer && specViewer.ctrl) specViewer.ctrl.abort();
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSpecModal(); });
+
+// ============================================================
+// DEEP LINKS  —  index.html?el=Mg   → [Mg/Fe] vs [Fe/H]
+//                index.html?x=COL&y=COL[&color=COL]  → any pair of columns
+// ============================================================
+function abundanceColumn(el) {
+  if (el === 'Fe') return allCols.find(c => c === '[FeII/H]');
+  const re = new RegExp('^\\[' + el + '(I|II)?/Fe(I|II)?\\]$');
+  return allCols.find(c => re.test(c)) || allCols.find(c => c === el);   // new / old CSV format
+}
+
+function openPlotFromURL() {
+  const q = new URLSearchParams(location.search);
+  if (!q.has('el') && !q.has('y')) return;
+  const xSel = document.getElementById('plot-x'), ySel = document.getElementById('plot-y');
+  const has = (sel, v) => [...sel.options].some(o => o.value === v);
+  const x = q.get('x') || ['[FeI/H]', 'Fe'].find(c => has(xSel, c));
+  const y = q.get('y') || abundanceColumn(q.get('el'));
+  if (!x || !y || !has(xSel, x) || !has(ySel, y)) {
+    console.warn('Deep link: column not found', { x, y, el: q.get('el') });
+    return;
+  }
+  xSel.value = x; ySel.value = y;
+  if (q.has('color')) document.getElementById('plot-color').value = q.get('color');
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === 1));
+  document.getElementById('panel-table').style.display = 'none';
+  document.getElementById('panel-plot').style.display = 'flex';
+  renderPlot();
+}
 
 // ============================================================
 // TABS
