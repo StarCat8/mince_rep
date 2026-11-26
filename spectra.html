@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MINCE — Spectra Archive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<!-- the "basic" Plotly bundle (scatter only) is ~1 MB instead of 3.5 MB -->
+<script src="https://cdn.plot.ly/plotly-basic-2.27.0.min.js"></script>
+<script src="js/mince-spectra.js"></script>
+<style>
+  :root{--bg:#0a0d14;--bg2:#111520;--bg3:#181d2e;--border:#232840;--accent:#4f9cf9;--accent2:#a78bfa;--accent3:#34d399;
+        --text:#e2e8f0;--text2:#8892aa;--text3:#4a5568;--warning:#fbbf24;--mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;--radius:6px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;display:flex;flex-direction:column;overflow:hidden}
+
+  header{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:16px;flex-shrink:0}
+  .logo{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent);letter-spacing:2px}
+  .subtitle{font-size:12px;color:var(--text2);font-family:var(--mono)}
+  .hbtn{display:flex;align-items:center;gap:7px;background:rgba(79,158,255,.1);border:1px solid rgba(79,158,255,.3);color:var(--accent);
+        padding:7px 14px;border-radius:var(--radius);font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1px;text-decoration:none;white-space:nowrap}
+  .hbtn:hover{background:rgba(79,158,255,.18);border-color:var(--accent);color:#fff}
+  .stats{margin-left:auto;display:flex;gap:20px}
+  .stat{text-align:right}
+  .stat-val{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--accent3)}
+  .stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
+
+  .main{flex:1;display:flex;min-height:0}
+  .sidebar{width:280px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:auto;padding:14px;gap:14px}
+  .sb-title{font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+  .sidebar input[type=text],.sidebar input[type=number],.sidebar select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:var(--radius);
+        font-family:var(--sans);font-size:12px;outline:none;width:100%}
+  .sidebar input:focus,.sidebar select:focus{border-color:var(--accent)}
+  .cond{display:grid;grid-template-columns:1fr 62px 62px 18px;gap:4px;margin-bottom:4px;align-items:center}
+  .cond input{font-family:var(--mono)!important;font-size:11px!important;padding:5px 6px!important}
+  .cond .x{color:var(--text3);cursor:pointer;text-align:center}
+  .cond .x:hover{color:#f87171}
+  .smallbtn{background:none;border:1px solid var(--border);color:var(--text2);padding:3px 8px;border-radius:var(--radius);cursor:pointer;font-size:10px;font-family:var(--mono)}
+  .smallbtn:hover{border-color:var(--accent);color:var(--accent)}
+  .chk{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer}
+  .chk input{accent-color:var(--accent)}
+  .note{font-size:11px;color:var(--text3);line-height:1.5}
+  .note code{font-family:var(--mono);color:var(--text2)}
+
+  .content{flex:1;display:flex;flex-direction:column;min-width:0}
+  .table-wrap{height:38vh;min-height:140px;overflow:auto;border-bottom:1px solid var(--border);resize:vertical}
+  .table-wrap::-webkit-scrollbar{width:6px;height:6px}.table-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  thead th{background:var(--bg3);padding:8px 10px;text-align:left;font-family:var(--mono);font-size:10px;color:var(--text2);border-bottom:1px solid var(--border);
+           white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:2}
+  thead th:hover,thead th.sorted{color:var(--accent)}
+  tbody tr{border-bottom:1px solid var(--border);cursor:pointer}
+  tbody tr:hover{background:var(--bg3)}
+  tbody tr.sel{background:rgba(79,158,255,.13)}
+  tbody tr.nospec{opacity:.45;cursor:default}
+  tbody td{padding:6px 10px;white-space:nowrap}
+  td.num{font-family:var(--mono);font-size:11px;color:var(--text2);text-align:right}
+  td.name{font-family:var(--mono);font-size:11px;color:var(--accent3);font-weight:700}
+  td.ref{color:var(--accent2)}
+  .badge{display:inline-block;font-family:var(--mono);font-size:9px;padding:1px 5px;border-radius:3px;border:1px solid var(--border);color:var(--text2);margin-right:3px}
+  .badge.n{color:var(--accent3);border-color:rgba(52,211,153,.4)}
+
+  .viewer-head{display:flex;align-items:baseline;gap:14px;padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .viewer-head .vh-name{font-family:var(--mono);font-weight:700;color:var(--accent3);font-size:14px}
+  .viewer-head .vh-par{font-family:var(--mono);font-size:11px;color:var(--text2)}
+  .viewer-head .vh-par b{color:var(--text);font-weight:400}
+  #viewer{flex:1;min-height:0}
+  .loading{display:flex;align-items:center;justify-content:center;height:100%;gap:10px;font-family:var(--mono);color:var(--text2);font-size:12px}
+
+  @media (max-width:900px){ .main{flex-direction:column;overflow:auto} .sidebar{width:100%;max-height:none} body{overflow:auto} .content{min-height:900px} }
+</style>
+</head>
+<body>
+
+<header>
+  <div><div class="logo">MINCE</div><div class="subtitle">Spectra Archive</div></div>
+  <a class="hbtn" href="index.html">◈ Abundance Visualizer</a>
+  <a class="hbtn" href="https://starcat8.github.io/mince-siter/index.html" target="_blank" rel="noopener">★ MINCE Website ↗</a>
+  <div class="stats">
+    <div class="stat"><div class="stat-val" id="s-pub">—</div><div class="stat-label">Published stars</div></div>
+    <div class="stat"><div class="stat-val" id="s-spec">—</div><div class="stat-label">With spectra</div></div>
+    <div class="stat"><div class="stat-val" id="s-files">—</div><div class="stat-label">FITS files</div></div>
+    <div class="stat"><div class="stat-val" id="s-shown">—</div><div class="stat-label">Shown</div></div>
+  </div>
+</header>
+
+<div class="main">
+  <aside class="sidebar">
+    <div>
+      <div class="sb-title">Search star</div>
+      <input type="text" id="q" placeholder="e.g. HD 139423, bd+07 4625…" autocomplete="off">
+    </div>
+    <div>
+      <div class="sb-title">Parameter ranges <button class="smallbtn" id="add-cond">+ add</button></div>
+      <div id="conds"></div>
+      <div class="note">Any catalog column. Leave min/max empty for no limit.</div>
+    </div>
+    <div>
+      <div class="sb-title">Paper</div>
+      <select id="f-ref"><option value="">All</option></select>
+    </div>
+    <div>
+      <div class="sb-title">Instrument</div>
+      <select id="f-instr"><option value="">All</option></select>
+    </div>
+    <label class="chk"><input type="checkbox" id="only-spec" checked> Only stars with spectra</label>
+    <button class="smallbtn" id="reset" style="align-self:flex-start">Reset filters</button>
+    <div class="note">
+      Click a row to plot its spectra. Drag to zoom, scroll to zoom, double-click to reset.
+      Each spectrum is drawn first from a ~24 KB overview, full resolution loads in the background.<br><br>
+      Spectra are released under <a href="https://creativecommons.org/licenses/by/4.0/" style="color:var(--accent2)" target="_blank">CC BY 4.0</a>;
+      please cite the relevant MINCE paper.
+    </div>
+  </aside>
+
+  <section class="content">
+    <div class="table-wrap" id="table-wrap"><div class="loading">Loading catalog…</div></div>
+    <div class="viewer-head" id="viewer-head"><span class="vh-par">No star selected</span></div>
+    <div id="viewer"></div>
+  </section>
+</div>
+
+<script>
+'use strict';
+// ── configuration ─────────────────────────────────────────────────────────────
+const CATALOG_CSV = 'MINCE32.csv';
+const SPECTRA_BASE = 'spectra/';
+const SENTINEL = -99;                 // values ≤ −99 are "not measured"
+
+// columns shown in the table: [csv column, label, decimals]
+const TABLE_COLS = [
+  ['ref', 'Paper'], ['Teff', 'Teff', 0], ['logg', 'log g', 2], ['[FeI/H]', '[Fe/H]', 2], ['micro', 'ξ', 2],
+  ['[Sr/Fe]', '[Sr/Fe]', 2], ['[BaII/FeII]', '[Ba/Fe]', 2], ['[EuII/FeII]', '[Eu/Fe]', 2], ['phot_g_mean_mag', 'G', 2],
+];
+const DEFAULT_CONDS = ['Teff', 'logg', '[FeI/H]'];
+
+// ── state ─────────────────────────────────────────────────────────────────────
+let rows = [], numericCols = [], manifest = null, viewer = null;
+let sortCol = null, sortAsc = true, selectedKey = null;
+
+const $ = id => document.getElementById(id);
+const { normKey, esc } = MinceSpectra;
+const isNum = v => typeof v === 'number' && isFinite(v) && v > SENTINEL;
+const starName = r => String(r.main_id_2 ?? r.target_id ?? '').replace(/\s+/g, ' ').trim();
+
+// ── load ──────────────────────────────────────────────────────────────────────
+Promise.all([
+  new Promise((res, rej) => Papa.parse(CATALOG_CSV, { download: true, header: true, dynamicTyping: true, skipEmptyLines: true,
+    complete: r => res(r), error: rej })),
+  MinceSpectra.loadManifest(SPECTRA_BASE).catch(e => { console.warn(e); return { stars: {}, files: {}, base: SPECTRA_BASE }; }),
+]).then(([csv, man]) => {
+  manifest = man;
+  const seen = new Set();
+  csv.data.forEach(r => {
+    const key = normKey(r.main_id_2) || normKey(r.target_id);
+    if (!key || seen.has(key)) return;            // duplicate rows in catalog → keep first
+    seen.add(key);
+    const sp = MinceSpectra.spectraFor(man, r.main_id_2, r.target_id);
+    r._key = sp ? sp.key : key;
+    r._name = starName(r);
+    r._files = sp ? sp.files : [];
+    r._star = sp ? sp.star : null;
+    r._instr = [...new Set(r._files.map(f => f.instrument))];
+    r._search = [r.main_id_2, r.target_id, r._star && r._star.name].map(normKey).join('|');
+    rows.push(r);
+  });
+  numericCols = csv.meta.fields.filter(c => csv.data.some(r => typeof r[c] === 'number'));
+
+  $('s-pub').textContent = rows.length;
+  $('s-spec').textContent = rows.filter(r => r._files.length).length;
+  $('s-files').textContent = Object.keys(man.files).length;
+
+  [...new Set(rows.map(r => r.ref).filter(Boolean))].sort().forEach(v => $('f-ref').add(new Option(v, v)));
+  [...new Set(rows.flatMap(r => r._instr))].sort().forEach(v => $('f-instr').add(new Option(v, v)));
+  DEFAULT_CONDS.filter(c => numericCols.includes(c)).forEach(c => addCond(c));
+
+  viewer = new MinceSpectra.Viewer($('viewer'), manifest);
+  render();
+  openFromHash();
+}).catch(e => { $('table-wrap').innerHTML = `<div class="loading">Error loading data: ${esc(e.message || e)}</div>`; });
+
+// ── filters ───────────────────────────────────────────────────────────────────
+function addCond(col = '') {
+  const d = document.createElement('div'); d.className = 'cond';
+  d.innerHTML = `<select>${numericCols.map(c => `<option ${c === col ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
+    <input type="number" step="any" placeholder="min"><input type="number" step="any" placeholder="max"><span class="x" title="remove">✕</span>`;
+  d.querySelector('.x').onclick = () => { d.remove(); render(); };
+  d.querySelectorAll('select,input').forEach(el => el.addEventListener('input', debounce(render, 120)));
+  $('conds').appendChild(d);
+}
+$('add-cond').onclick = () => addCond(numericCols[0]);
+['q', 'f-ref', 'f-instr', 'only-spec'].forEach(id => $(id).addEventListener('input', debounce(render, 80)));
+$('reset').onclick = () => {
+  $('q').value = ''; $('f-ref').value = ''; $('f-instr').value = ''; $('only-spec').checked = true;
+  $('conds').innerHTML = ''; DEFAULT_CONDS.filter(c => numericCols.includes(c)).forEach(c => addCond(c)); render();
+};
+
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+function filtered() {
+  const q = normKey($('q').value), ref = $('f-ref').value, instr = $('f-instr').value, only = $('only-spec').checked;
+  const conds = [...$('conds').children].map(d => {
+    const [sel, mn, mx] = d.querySelectorAll('select,input');
+    return { c: sel.value, mn: mn.value === '' ? null : +mn.value, mx: mx.value === '' ? null : +mx.value };
+  }).filter(c => c.mn !== null || c.mx !== null);
+  return rows.filter(r => {
+    if (only && !r._files.length) return false;
+    if (q && !r._search.includes(q)) return false;
+    if (ref && r.ref !== ref) return false;
+    if (instr && !r._instr.includes(instr)) return false;
+    for (const c of conds) {
+      const v = r[c.c];
+      if (!isNum(v)) return false;
+      if (c.mn !== null && v < c.mn) return false;
+      if (c.mx !== null && v > c.mx) return false;
+    }
+    return true;
+  });
+}
+
+// ── table ─────────────────────────────────────────────────────────────────────
+function render() {
+  let data = filtered();
+  if (sortCol) {
+    const get = sortCol === '_n' ? r => r._files.length : sortCol === '_name' ? r => r._name : r => r[sortCol];
+    data = [...data].sort((a, b) => {
+      let av = get(a), bv = get(b);
+      const an = av == null || (typeof av === 'number' && av <= SENTINEL), bn = bv == null || (typeof bv === 'number' && bv <= SENTINEL);
+      if (an || bn) return an - bn;
+      return (av > bv ? 1 : av < bv ? -1 : 0) * (sortAsc ? 1 : -1);
+    });
+  }
+  $('s-shown').textContent = data.length;
+  const th = (c, l) => `<th data-c="${esc(c)}" class="${sortCol === c ? 'sorted' : ''}">${esc(l)} ${sortCol === c ? (sortAsc ? '↑' : '↓') : ''}</th>`;
+  const head = `<thead><tr>${th('_name', 'Star')}${TABLE_COLS.map(([c, l]) => th(c, l)).join('')}${th('_n', 'Spectra')}</tr></thead>`;
+  const body = data.map(r => {
+    const cells = TABLE_COLS.map(([c, , dec]) => {
+      const v = r[c];
+      if (dec === undefined) return `<td class="ref">${esc(v ?? '')}</td>`;
+      return `<td class="num">${isNum(v) ? v.toFixed(dec) : '—'}</td>`;
+    }).join('');
+    const spec = r._files.length
+      ? `<span class="badge n">${r._files.length}</span>${r._instr.map(i => `<span class="badge">${esc(i)}</span>`).join('')}`
+      : '<span class="badge">none</span>';
+    return `<tr data-k="${esc(r._key)}" class="${r._files.length ? '' : 'nospec'} ${r._key === selectedKey ? 'sel' : ''}">
+      <td class="name">${esc(r._name)}</td>${cells}<td>${spec}</td></tr>`;
+  }).join('');
+  $('table-wrap').innerHTML = data.length
+    ? `<table>${head}<tbody>${body}</tbody></table>`
+    : '<div class="loading">No stars match the current filters</div>';
+}
+
+$('table-wrap').addEventListener('click', e => {
+  const th = e.target.closest('th');
+  if (th) { const c = th.dataset.c; if (sortCol === c) sortAsc = !sortAsc; else { sortCol = c; sortAsc = true; } render(); return; }
+  const tr = e.target.closest('tr[data-k]');
+  if (tr && !tr.classList.contains('nospec')) selectStar(tr.dataset.k);
+});
+
+// ── selection / viewer ────────────────────────────────────────────────────────
+function selectStar(key, onlyFiles) {
+  const r = rows.find(x => x._key === key);
+  if (!r || !r._files.length) return;
+  selectedKey = key;
+  document.querySelectorAll('tbody tr.sel').forEach(t => t.classList.remove('sel'));
+  const tr = document.querySelector(`tbody tr[data-k="${CSS.escape(key)}"]`);
+  if (tr) { tr.classList.add('sel'); tr.scrollIntoView({ block: 'nearest' }); }
+  const p = (c, l, d) => isNum(r[c]) ? `<span class="vh-par">${l} <b>${r[c].toFixed(d)}</b></span>` : '';
+  $('viewer-head').innerHTML = `<span class="vh-name">${esc(r._name)}</span>
+    <span class="vh-par" style="color:var(--accent2)">${esc(r.ref ?? '')}</span>
+    ${p('Teff', 'Teff', 0)}${p('logg', 'log g', 2)}${p('[FeI/H]', '[Fe/H]', 2)}${p('micro', 'ξ', 2)}
+    ${r._star && r._star.rv != null ? `<span class="vh-par">v<sub>r</sub>(Gaia) <b>${r._star.rv.toFixed(2)}</b> km/s</span>` : ''}
+    <span class="vh-par" style="margin-left:auto"><a href="#star=${encodeURIComponent(key)}" style="color:var(--text3)">🔗 link</a></span>`;
+  history.replaceState(null, '', '#star=' + encodeURIComponent(key));
+  viewer.showStar(r._name, r._files, { rv: r._star ? r._star.rv : 0, only: onlyFiles });
+}
+
+function openFromHash() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  const star = h.get('star');
+  if (!star) return;
+  const key = normKey(star);
+  const r = rows.find(x => x._key === key || x._search.split('|').includes(key));
+  if (r) selectStar(r._key, h.get('file') ? h.get('file').split(',') : null);
+}
+window.addEventListener('hashchange', openFromHash);
+</script>
+</body>
+</html>

@@ -6,6 +6,7 @@
 <title>MINCE — Data Visualization Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<script src="js/mince-spectra.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -594,6 +595,30 @@
     border-radius: 3px;
     padding: 1px 4px;
   }
+
+  /* ── SPECTRA POPUP (click on a plot point) ── */
+  .spec-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;align-items:center;justify-content:center}
+  .spec-modal.open{display:flex}
+  .spec-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;width:min(560px,94vw);max-height:88vh;display:flex;flex-direction:column;overflow:hidden;transition:width .15s}
+  .spec-box.wide{width:min(1280px,96vw);height:86vh}
+  .spec-head{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border)}
+  .spec-head .sn{font-family:var(--mono);font-weight:700;color:var(--accent3);font-size:14px}
+  .spec-head .sp{font-family:var(--mono);font-size:11px;color:var(--text2)}
+  .spec-head .close{margin-left:auto;cursor:pointer;color:var(--text3);font-size:16px}
+  .spec-head .close:hover{color:var(--danger)}
+  .spec-list{padding:10px 16px;display:flex;flex-direction:column;gap:6px;overflow:auto}
+  .spec-row{display:flex;align-items:center;gap:10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px}
+  .spec-row .fn{font-family:var(--mono);font-size:11px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .spec-row .fm{font-family:var(--mono);font-size:10px;color:var(--text2)}
+  .spec-row .acts{margin-left:auto;display:flex;gap:6px;flex-shrink:0}
+  .sbtn{background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:5px 10px;border-radius:var(--radius);cursor:pointer;font-family:var(--mono);font-size:11px;text-decoration:none;white-space:nowrap}
+  .sbtn:hover{border-color:var(--accent);color:var(--accent)}
+  .sbtn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .spec-foot{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border)}
+  .spec-viewer{flex:1;min-height:0;display:none;border-top:1px solid var(--border)}
+  .spec-box.wide .spec-viewer{display:block}
+  .spec-box.wide .spec-list{display:none}
+  .spec-empty{padding:22px 16px;color:var(--text3);font-family:var(--mono);font-size:12px}
 </style>
 </head>
 <body>
@@ -607,6 +632,7 @@
   <a class="mince-site-btn" href="https://starcat8.github.io/mince-siter/index.html" target="_blank" rel="noopener">
     ★ MINCE Website <span class="btn-arrow">↗</span>
   </a>
+  <a class="mince-site-btn" href="spectra.html">◇ Spectra Archive</a>
   <div class="stats">
     <div class="stat">
       <div class="stat-val" id="total-count">—</div>
@@ -717,6 +743,19 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- SPECTRA POPUP -->
+<div class="spec-modal" id="spec-modal" onclick="if(event.target===this)closeSpecModal()">
+  <div class="spec-box" id="spec-box">
+    <div class="spec-head">
+      <span class="sn" id="spec-name"></span><span class="sp" id="spec-par"></span>
+      <span class="close" onclick="closeSpecModal()" title="Close (Esc)">✕</span>
+    </div>
+    <div class="spec-list" id="spec-list"></div>
+    <div class="spec-viewer" id="spec-viewer"></div>
+    <div class="spec-foot" id="spec-foot"></div>
   </div>
 </div>
 
@@ -1054,6 +1093,9 @@ function renderPlot() {
   const xf     = pool.filter((_, i) => validMask[i]).map(r => r[xCol]);
   const yf     = pool.filter((_, i) => validMask[i]).map(r => r[yCol]);
   const labels = pool.filter((_, i) => validMask[i]).map(r => r['main_id_2'] || r['target_id'] || '');
+  const validRows = pool.filter((_, i) => validMask[i]);
+  // white ring = star has public spectra (click to view/download)
+  const hasSpec = validRows.map(r => !!(spectraManifest && MinceSpectra.spectraFor(spectraManifest, r['main_id_2'], r['target_id'])));
 
   if (xf.length === 0) {
     document.getElementById('plotly-container').innerHTML =
@@ -1064,7 +1106,7 @@ function renderPlot() {
   let marker = {
     size: 7,
     opacity: 0.85,
-    line: { width: 0.5, color: 'rgba(255,255,255,0.1)' }
+    line: { width: hasSpec.map(h => h ? 1.6 : 0.5), color: hasSpec.map(h => h ? '#ffffff' : 'rgba(255,255,255,0.1)') }
   };
 
   if (colorCol) {
@@ -1094,7 +1136,8 @@ function renderPlot() {
     mode: 'markers',
     type: 'scatter',
     text: labels,
-    hovertemplate: `<b>%{text}</b><br>${xCol}: %{x}<br>${yCol}: %{y}<extra></extra>`,
+    customdata: hasSpec.map(h => h ? '◇ click for spectra' : ''),
+    hovertemplate: `<b>%{text}</b><br>${xCol}: %{x}<br>${yCol}: %{y}<br>%{customdata}<extra></extra>`,
     marker
   };
 
@@ -1127,8 +1170,78 @@ function renderPlot() {
     toImageButtonOptions: { format: 'png', scale: 2 }
   };
 
-  Plotly.newPlot('plotly-container', [trace], layout, config);
+  Plotly.newPlot('plotly-container', [trace], layout, config).then(gd => {
+    gd.removeAllListeners('plotly_click');
+    gd.on('plotly_click', ev => {
+      const p = ev.points && ev.points[0];
+      if (p) openSpecModal(validRows[p.pointIndex]);
+    });
+  });
 }
+
+// ============================================================
+// SPECTRA  —  click on a point → view / download FITS
+// ============================================================
+let spectraManifest = null, specViewer = null;
+MinceSpectra.loadManifest('spectra/')
+  .then(m => { spectraManifest = m; const pc = document.getElementById('plotly-container'); if (pc._fullLayout) renderPlot(); })
+  .catch(e => console.warn('No spectra manifest:', e));
+
+function openSpecModal(row) {
+  if (!row) return;
+  const name = String(row['main_id_2'] || row['target_id'] || '').replace(/\s+/g, ' ').trim();
+  const sp = spectraManifest && MinceSpectra.spectraFor(spectraManifest, row['main_id_2'], row['target_id']);
+  const E = MinceSpectra.esc;
+  const num = (c, l, d) => (typeof row[c] === 'number' && row[c] > SENTINEL) ? `${l} ${row[c].toFixed(d)}` : '';
+  document.getElementById('spec-name').textContent = name;
+  document.getElementById('spec-par').textContent =
+    [row['ref'], num('Teff', 'Teff', 0), num('logg', 'logg', 2), num('[FeI/H]', '[Fe/H]', 2)].filter(Boolean).join(' · ');
+  const box = document.getElementById('spec-box');
+  box.classList.remove('wide');
+  const list = document.getElementById('spec-list'), foot = document.getElementById('spec-foot');
+  if (!sp) {
+    list.innerHTML = '<div class="spec-empty">No public spectra for this star yet.</div>';
+    foot.innerHTML = '<a class="sbtn" href="spectra.html">Open spectra archive</a>';
+  } else {
+    list.innerHTML = sp.files.map(f => `
+      <div class="spec-row">
+        <div style="min-width:0">
+          <div class="fn" title="${E(f.fits)}">${E(f.fits)}</div>
+          <div class="fm">${E(f.instrument)} · ${f.wmin.toFixed(0)}–${f.wmax.toFixed(0)} Å · ${MinceSpectra.fmtBytes(f.size)}</div>
+        </div>
+        <div class="acts">
+          <button class="sbtn primary" data-view="${E(f.id)}">▶ View</button>
+          <a class="sbtn" href="${MinceSpectra.downloadUrl(spectraManifest, f)}" download="${E(f.download.split('/').pop())}" target="_blank" rel="noopener">⬇ Download</a>
+        </div>
+      </div>`).join('');
+    list.querySelectorAll('[data-view]').forEach(b => b.onclick = () => showSpecViewer(name, sp, [b.dataset.view]));
+    foot.innerHTML = `${sp.files.length > 1 ? '<button class="sbtn primary" id="spec-view-all">▶ View all</button>' : ''}
+      <a class="sbtn" href="spectra.html#star=${encodeURIComponent(sp.key)}" target="_blank">Open in spectra archive ↗</a>`;
+    const va = document.getElementById('spec-view-all');
+    if (va) va.onclick = () => showSpecViewer(name, sp, sp.files.map(f => f.id));
+  }
+  document.getElementById('spec-modal').classList.add('open');
+}
+
+function showSpecViewer(name, sp, ids) {
+  document.getElementById('spec-box').classList.add('wide');
+  if (!specViewer) specViewer = new MinceSpectra.Viewer(document.getElementById('spec-viewer'), spectraManifest);
+  document.getElementById('spec-foot').innerHTML =
+    `<button class="sbtn" id="spec-back">◂ Back to file list</button>
+     <a class="sbtn" href="spectra.html#star=${encodeURIComponent(sp.key)}" target="_blank">Open in spectra archive ↗</a>`;
+  document.getElementById('spec-back').onclick = () => {
+    document.getElementById('spec-box').classList.remove('wide');
+    const row = allData.find(r => MinceSpectra.normKey(r['main_id_2']) === sp.key || MinceSpectra.normKey(r['target_id']) === sp.key);
+    openSpecModal(row);
+  };
+  specViewer.showStar(name, sp.files, { rv: sp.star.rv || 0, only: ids });
+}
+
+function closeSpecModal() {
+  document.getElementById('spec-modal').classList.remove('open');
+  if (specViewer && specViewer.ctrl) specViewer.ctrl.abort();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSpecModal(); });
 
 // ============================================================
 // TABS
